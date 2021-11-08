@@ -71,16 +71,50 @@ namespace aoc
 			return counts;
 		}
 
-		public void Fill(char c)
+		public (int X, int Y) Find(char c)
 		{
 			for (var y = 0; y < Height; y++)
 			{
 				for (var x = 0; x < Width; x++)
 				{
-					_data[y, x] = c;
+					if (_data[y, x] == c)
+					{
+						return (x, y);
+					}
+				}
+			}
+			return (-1, -1);
+		}
+
+		public void Fill(char c, Func<int, int, bool> predicate = null)
+		{
+			for (var y = 0; y < Height; y++)
+			{
+				for (var x = 0; x < Width; x++)
+				{
+					if (predicate == null || predicate(x, y))
+					{
+						_data[y, x] = c;
+					}
 				}
 			}
 		}
+
+		public int Count(Func<char, bool> func)
+		{
+			var count = 0;
+			for (var y = 0; y < Height; y++)
+			{
+				for (var x = 0; x < Width; x++)
+				{
+					if (func(_data[y, x]))
+					{
+						count++;
+					}
+				}
+			}
+			return count;
+		}		
 
 		public Dictionary<char, int> CountAdjacent4Distinct(int x, int y)
 		{
@@ -147,10 +181,16 @@ namespace aoc
 			return count;
 		}
 
-		public char this[int X, int Y]
+		public char this[(int X, int Y) p]
 		{
-			get => _data[Y, X];
-			set => _data[Y, X] = value;
+			get => this[p.X, p.Y];
+			set => this[p.X, p.Y] = value;
+		}
+
+		public char this[int x, int y]
+		{
+			get => _data[y, x];
+			set => _data[y, x] = value;
 		}
 		
 		public int Width { get; }

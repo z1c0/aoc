@@ -63,7 +63,11 @@ namespace aoc
             Console.WriteLine($"1/1 in bounds: {grid.IsInBounds(1, 1)}");
             Console.WriteLine($"1/10 in bounds: {grid.IsInBounds(1, 10)}");
             Console.WriteLine();
+            // Find (first occurrence)
+            Console.WriteLine(grid.Find('.'));
+            // Count (all matches)
+            Console.WriteLine(grid.Count(c => c == '#'));
 		}
 	}
 }
-    
+
