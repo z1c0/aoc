@@ -6,13 +6,13 @@ using System.Text;
 
 namespace aoc
 {
-	public class Grid
+	public class Grid<T> where T : struct
 	{
 		public Grid(int width, int height)
 		{
 			Width = width;
 			Height = height;
-			_data = new char[Height, Width];
+			_data = new T[Height, Width];
 		}
 
 		public void Print()
@@ -41,9 +41,9 @@ namespace aoc
 			}
 		}
 
-		internal Grid Clone()
+		internal Grid<T> Clone()
 		{
-			var clone = new Grid(Width, Height);
+			var clone = new Grid<T>(Width, Height);
 			for (var y = 0; y < Height; y++)
 			{
 				for (var x = 0; x < Width; x++)
@@ -54,9 +54,9 @@ namespace aoc
 			return clone;
 		}
 
-		public Dictionary<char, int> CountDistinct()
+		public Dictionary<T, int> CountDistinct()
 		{
-			var counts = new Dictionary<char, int>();
+			var counts = new Dictionary<T, int>();
 			for (var y = 0; y < Height; y++)
 			{
 				for (var x = 0; x < Width; x++)
@@ -71,13 +71,13 @@ namespace aoc
 			return counts;
 		}
 
-		public (int X, int Y) Find(char c)
+		public (int X, int Y) Find(T t)
 		{
 			for (var y = 0; y < Height; y++)
 			{
 				for (var x = 0; x < Width; x++)
 				{
-					if (_data[y, x] == c)
+					if (_data[y, x].Equals(t))
 					{
 						return (x, y);
 					}
@@ -86,7 +86,7 @@ namespace aoc
 			return (-1, -1);
 		}
 
-		public void Fill(char c, Func<int, int, bool> predicate = null)
+		public void Fill(T t, Func<int, int, bool>? predicate = null)
 		{
 			for (var y = 0; y < Height; y++)
 			{
@@ -94,13 +94,13 @@ namespace aoc
 				{
 					if (predicate == null || predicate(x, y))
 					{
-						_data[y, x] = c;
+						_data[y, x] = t;
 					}
 				}
 			}
 		}
 
-		public int Count(Func<char, bool> func)
+		public int Count(Func<T, bool> func)
 		{
 			var count = 0;
 			for (var y = 0; y < Height; y++)
@@ -116,19 +116,19 @@ namespace aoc
 			return count;
 		}		
 
-		public Dictionary<char, int> CountAdjacent4Distinct(int x, int y)
+		public Dictionary<T, int> CountAdjacent4Distinct(int x, int y)
 		{
 			return GetAdjacentDistinct(x, y, false);
 		}
 		
-		public Dictionary<char, int> CountAdjacent8Distinct(int x, int y)
+		public Dictionary<T, int> CountAdjacent8Distinct(int x, int y)
 		{
 			return GetAdjacentDistinct(x, y, true);
 		}
 
-		private Dictionary<char, int> GetAdjacentDistinct(int x, int y, bool all)
+		private Dictionary<T, int> GetAdjacentDistinct(int x, int y, bool all)
 		{
-			var adjacents = new Dictionary<char, int>();
+			var adjacents = new Dictionary<T, int>();
 			void CheckThenAdd(int x, int y)
 			{
 				if (IsInBounds(x, y))
@@ -155,17 +155,17 @@ namespace aoc
 			return adjacents;
 		}
 
-		public int CountAdjacent8(int x, int y, char c)
+		public int CountAdjacent8(int x, int y, T t)
 		{
 			var counts = CountAdjacent8Distinct(x, y);
-			counts.TryGetValue(c, out var count);
+			counts.TryGetValue(t, out var count);
 			return count;
 		}
 
-		public int CountAdjacent4(int x, int y, char c)
+		public int CountAdjacent4(int x, int y, T t)
 		{
 			var counts = CountAdjacent4Distinct(x, y);
-			counts.TryGetValue(c, out var count);
+			counts.TryGetValue(t, out var count);
 			return count;
 		}
 
@@ -174,20 +174,20 @@ namespace aoc
 			return x >= 0 && y >= 0 && x < Width && y < Height;
 		}
 
-		public int Count(char c)
+		public int Count(T t)
 		{
 			var counts = CountDistinct();
-			counts.TryGetValue(c, out var count);
+			counts.TryGetValue(t, out var count);
 			return count;
 		}
 
-		public char this[(int X, int Y) p]
+		public T this[(int X, int Y) p]
 		{
 			get => this[p.X, p.Y];
 			set => this[p.X, p.Y] = value;
 		}
 
-		public char this[int x, int y]
+		public T this[int x, int y]
 		{
 			get => _data[y, x];
 			set => _data[y, x] = value;
@@ -195,19 +195,22 @@ namespace aoc
 		
 		public int Width { get; }
 		public int Height { get; }
-		private readonly char[,] _data;
+		private readonly T[,] _data;
+	}
 
-		internal static Grid FromFile(string fileName)
+	public static class CharGrid
+	{
+		public static Grid<char> FromFile(string fileName)
 		{
 			var lines = File.ReadAllLines(fileName);
 			var h = lines.Length;
 			var w = lines.First().Length;
-			var grid = new Grid(w, h);
+			var grid = new Grid<char>(w, h);
 			for (var y = 0; y < h; y++)
 			{
 				for (var x = 0; x < w; x++)
 				{
-					grid._data[y, x] = lines[y][x];
+					grid[x, y] = lines[y][x];
 				}
 			}
 			return grid;

@@ -7,7 +7,7 @@ namespace aoc
 	{
 		static void Main()
 		{
-			var grid = Grid.FromFile("input.txt");
+			var grid = CharGrid.FromFile("input.txt");
 			Console.WriteLine($"Width: {grid.Width}, Height: {grid.Height}");
             Console.WriteLine();
             // Print to console
