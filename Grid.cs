@@ -22,6 +22,19 @@ namespace aoc
 			Console.Write(sb);
 		}
 
+		public void ForEach(Action<(int X, int Y)> callback)
+		{
+			for (var y = 0; y < Height; y++)
+			{
+				for (var x = 0; x < Width; x++)
+				{
+					callback((x, y));
+				}
+			}
+		}
+
+		public int Size => Width * Height;
+
 		public override string ToString()
 		{
 			var sb = new StringBuilder();
@@ -86,6 +99,20 @@ namespace aoc
 			return (-1, -1);
 		}
 
+		public IEnumerable<(int X, int Y)> FindAll(Func<int, int, bool> predicate)
+		{
+			for (var y = 0; y < Height; y++)
+			{
+				for (var x = 0; x < Width; x++)
+				{
+					if (predicate(x, y))
+					{
+						yield return (x, y);
+					}
+				}
+			}
+		}
+
 		public void Fill(T t, Func<int, int, bool>? predicate = null)
 		{
 			for (var y = 0; y < Height; y++)
@@ -114,13 +141,67 @@ namespace aoc
 				}
 			}
 			return count;
-		}		
+		}
+
+		public IEnumerable<(int X, int Y)> GetAdjacent4((int X, int Y) p)
+		{
+			return GetAdjacent4(p.X, p.Y);
+		}
+
+		public IEnumerable<(int X, int Y)> GetAdjacent4(int x, int y)
+		{
+			if (IsInBounds(x - 1, y))
+			{
+				yield return (x - 1, y);
+			}
+			if (IsInBounds(x + 1, y))
+			{
+				yield return (x + 1, y);
+			}
+			if (IsInBounds(x, y - 1))
+			{
+				yield return (x, y - 1);
+			}
+			if (IsInBounds(x, y + 1))
+			{
+				yield return (x, y + 1);
+			}
+		}
+
+		public IEnumerable<(int X, int Y)> GetAdjacent8((int X, int Y) p)
+		{
+			return GetAdjacent8(p.X, p.Y);
+		}
+
+		public IEnumerable<(int X, int Y)> GetAdjacent8(int x, int y)
+		{
+			foreach (var a in GetAdjacent4(x, y))
+			{
+				yield return a;
+			}
+			if (IsInBounds(x - 1, y - 1))
+			{
+				yield return (x - 1, y - 1);
+			}
+			if (IsInBounds(x + 1, y - 1))
+			{
+				yield return (x + 1, y - 1);
+			}
+			if (IsInBounds(x - 1, y + 1))
+			{
+				yield return (x - 1, y + 1);
+			}
+			if (IsInBounds(x + 1, y + 1))
+			{
+				yield return (x + 1, y + 1);
+			}
+		}
 
 		public Dictionary<T, int> CountAdjacent4Distinct(int x, int y)
 		{
 			return GetAdjacentDistinct(x, y, false);
 		}
-		
+
 		public Dictionary<T, int> CountAdjacent8Distinct(int x, int y)
 		{
 			return GetAdjacentDistinct(x, y, true);
@@ -138,7 +219,6 @@ namespace aoc
 					{
 						adjacents[c]++;
 					}
-					
 				}
 			}
 			CheckThenAdd(x - 1, y);
@@ -192,10 +272,29 @@ namespace aoc
 			get => _data[y, x];
 			set => _data[y, x] = value;
 		}
-		
+
 		public int Width { get; }
 		public int Height { get; }
 		private readonly T[,] _data;
+	}
+
+	public static class IntGrid
+	{
+		public static Grid<int> FromFile(string fileName)
+		{
+			var lines = File.ReadAllLines(fileName);
+			var h = lines.Length;
+			var w = lines.First().Length;
+			var grid = new Grid<int>(w, h);
+			for (var y = 0; y < h; y++)
+			{
+				for (var x = 0; x < w; x++)
+				{
+					grid[x, y] = int.Parse(lines[y][x].ToString());
+				}
+			}
+			return grid;
+		}
 	}
 
 	public static class CharGrid
