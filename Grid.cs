@@ -33,6 +33,18 @@ namespace aoc
 			}
 		}
 
+		public Grid<T> Resize(int newWidth, int newHeight)
+		{
+			var newGrid = new Grid<T>(newWidth, newHeight);
+			ForEach(p => {
+				if (newGrid.IsInBounds(p)) 
+				{
+					newGrid[p] = this[p];
+				}
+			});
+			return newGrid;
+		}
+
 		public int Size => Width * Height;
 
 		public override string ToString()
@@ -248,6 +260,8 @@ namespace aoc
 			counts.TryGetValue(t, out var count);
 			return count;
 		}
+
+		public bool IsInBounds((int X, int Y) p) => IsInBounds(p.X, p.Y);
 
 		public bool IsInBounds(int x, int y)
 		{
