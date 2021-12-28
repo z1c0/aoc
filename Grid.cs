@@ -66,7 +66,28 @@ namespace aoc
 			}
 		}
 
-		internal Grid<T> Clone()
+		public override bool Equals(object? obj)
+		{
+			if (obj is not Grid<T> other || Width != other.Width || Height != other.Height)
+			{
+				return false;
+			}
+			for (var y = 0; y < Height; y++)
+			{
+				for (var x = 0; x < Width; x++)
+				{
+					if (!this[x, y].Equals(other[x, y]))
+					{
+						return false;
+					}
+				}
+			}
+			return true;
+		}
+
+		public override int GetHashCode() => (Width, Height).GetHashCode();
+
+		public Grid<T> Clone()
 		{
 			var clone = new Grid<T>(Width, Height);
 			for (var y = 0; y < Height; y++)
@@ -98,17 +119,13 @@ namespace aoc
 
 		public (int X, int Y) Find(T t)
 		{
-			for (var y = 0; y < Height; y++)
-			{
-				for (var x = 0; x < Width; x++)
-				{
-					if (_data[y, x].Equals(t))
-					{
-						return (x, y);
-					}
-				}
-			}
-			return (-1, -1);
+			var all = FindAll(t);
+			return all.Any() ? all.First() : (-1, -1);
+		}
+
+		public IEnumerable<(int X, int Y)> FindAll(T t)
+		{
+			return FindAll((x, y) => this[(x, y)].Equals(t));
 		}
 
 		public IEnumerable<(int X, int Y)> FindAll(Func<int, int, bool> predicate)
@@ -292,38 +309,24 @@ namespace aoc
 		private readonly T[,] _data;
 	}
 
-	public static class IntGrid
+	public static partial class Input
 	{
-		public static Grid<int> FromFile(string fileName)
-		{
-			var lines = File.ReadAllLines(fileName);
-			var h = lines.Length;
-			var w = lines.First().Length;
-			var grid = new Grid<int>(w, h);
-			for (var y = 0; y < h; y++)
-			{
-				for (var x = 0; x < w; x++)
-				{
-					grid[x, y] = int.Parse(lines[y][x].ToString());
-				}
-			}
-			return grid;
-		}
-	}
+		public static Grid<int> ReadIntGrid(string fileName = "input.txt") => ParseIntGrid(File.ReadAllLines(fileName));
+		public static Grid<int> ParseIntGrid(IEnumerable<string> lines) => ParseGrid(lines, c => int.Parse(c.ToString()));
 
-	public static class CharGrid
-	{
-		public static Grid<char> FromFile(string fileName)
+		public static Grid<char> ReadCharGrid(string fileName = "input.txt") => ParseCharGrid(File.ReadAllLines(fileName));
+		public static Grid<char> ParseCharGrid(IEnumerable<string> lines) => ParseGrid(lines, c => c);
+
+		private static Grid<T> ParseGrid<T>(IEnumerable<string> lines, Func<char, T> converter) where T : struct
 		{
-			var lines = File.ReadAllLines(fileName);
-			var h = lines.Length;
+			var h = lines.Count();
 			var w = lines.First().Length;
-			var grid = new Grid<char>(w, h);
+			var grid = new Grid<T>(w, h);
 			for (var y = 0; y < h; y++)
 			{
 				for (var x = 0; x < w; x++)
 				{
-					grid[x, y] = lines[y][x];
+					grid[x, y] = converter(lines.ElementAt(y)[x]);
 				}
 			}
 			return grid;
