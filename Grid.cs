@@ -6,7 +6,7 @@ using System.Text;
 
 namespace aoc
 {
-	public class Grid<T> where T : struct
+	public class Grid<T> : IGrid<T> where T : struct
 	{
 		public Grid(int width, int height)
 		{
@@ -15,14 +15,23 @@ namespace aoc
 			_data = new T[Height, Width];
 		}
 
-		public void Print()
+		public void Print() => Print(null);
+		
+		public void Print(Func<(int x, int y), (ConsoleColor color, ConsoleColor? background)>? func)
 		{
-			var sb = new StringBuilder();
-			PrintTo(sb);
-			Console.Write(sb);
+			func ??= (p) => (Console.ForegroundColor, Console.BackgroundColor);
+			for (var y = 0; y < Height; y++)
+			{
+				for (var x = 0; x < Width; x++)
+				{
+					var (color, background) = func((x, y));
+					ConsoleEx.Write($"{_data[y, x]}", color, background);
+				}
+				Console.WriteLine();
+			}
 		}
 
-		public void ForEach(Action<(int X, int Y)> callback)
+		public void ForEach(Action<(int x, int y)> callback)
 		{
 			for (var y = 0; y < Height; y++)
 			{
@@ -117,26 +126,40 @@ namespace aoc
 			return counts;
 		}
 
-		public (int X, int Y) Find(T t)
+		public (int x, int y) Find(T t)
 		{
 			var all = FindAll(t);
 			return all.Any() ? all.First() : (-1, -1);
 		}
 
-		public IEnumerable<(int X, int Y)> FindAll(T t)
-		{
-			return FindAll((x, y) => this[(x, y)].Equals(t));
-		}
+		public IEnumerable<(int x, int y)> FindAll(T t) => FindAll(c => c.v.Equals(t)).Select(e => e.p);
 
-		public IEnumerable<(int X, int Y)> FindAll(Func<int, int, bool> predicate)
+		public IEnumerable<(int x, int y)> FindAll(Func<(int x, int y), bool> predicate)
 		{
 			for (var y = 0; y < Height; y++)
 			{
 				for (var x = 0; x < Width; x++)
 				{
-					if (predicate(x, y))
+					var p = (x, y);
+					if (predicate(p))
 					{
-						yield return (x, y);
+						yield return p;
+					}
+				}
+			}
+		}
+		
+		public IEnumerable<((int x, int y) p, T v)> FindAll(Func<((int x, int y) p, T v), bool> predicate)
+		{
+			for (var y = 0; y < Height; y++)
+			{
+				for (var x = 0; x < Width; x++)
+				{
+					var p = (x, y);
+					var v = this[p];
+					if (predicate((p, v)))
+					{
+						yield return ((p, v));
 					}
 				}
 			}
@@ -156,14 +179,16 @@ namespace aoc
 			}
 		}
 
-		public int Count(Func<T, bool> func)
+		public int Count(Func<T, bool> func) =>Count(p => func(this[p]));
+
+		public int Count(Func<(int x, int y), bool> func)
 		{
 			var count = 0;
 			for (var y = 0; y < Height; y++)
 			{
 				for (var x = 0; x < Width; x++)
 				{
-					if (func(_data[y, x]))
+					if (func((x, y)))
 					{
 						count++;
 					}
@@ -171,38 +196,41 @@ namespace aoc
 			}
 			return count;
 		}
-
-		public IEnumerable<(int X, int Y)> GetAdjacent4((int X, int Y) p)
+		
+		public void ForEach(Action<((int x, int y) p, T v)> callback)
 		{
-			return GetAdjacent4(p.X, p.Y);
-		}
-
-		public IEnumerable<(int X, int Y)> GetAdjacent4(int x, int y)
-		{
-			if (IsInBounds(x - 1, y))
+			for (var y = 0; y < Height; y++)
 			{
-				yield return (x - 1, y);
-			}
-			if (IsInBounds(x + 1, y))
-			{
-				yield return (x + 1, y);
-			}
-			if (IsInBounds(x, y - 1))
-			{
-				yield return (x, y - 1);
-			}
-			if (IsInBounds(x, y + 1))
-			{
-				yield return (x, y + 1);
+				for (var x = 0; x < Width; x++)
+				{
+					callback(((x, y), this[x, y]));
+				}
 			}
 		}
+		
+		public (int x, int y) GetNorth((int x, int y) p) => (p.x, p.y - 1);
+		
+		public (int x, int y) GetSouth((int x, int y) p) => (p.x, p.y + 1);
+		
+		public (int x, int y) GetWest((int x, int y) p) => (p.x - 1, p.y);
+		
+		public (int x, int y) GetEast((int x, int y) p) => (p.x + 1, p.y);
 
-		public IEnumerable<(int X, int Y)> GetAdjacent8((int X, int Y) p)
+		public IEnumerable<(int x, int y)> GetAdjacent4((int x, int y) p)
 		{
-			return GetAdjacent8(p.X, p.Y);
+			return GetAdjacent4(p.x, p.y);
 		}
 
-		public IEnumerable<(int X, int Y)> GetAdjacent8(int x, int y)
+		public IEnumerable<(int x, int y)> GetAdjacent4(int x, int y) =>
+			new[] { GetWest((x, y)), GetEast((x, y)), GetNorth((x, y)), GetSouth((x, y)) }
+				.Where(IsInBounds);
+
+		public IEnumerable<(int x, int y)> GetAdjacent8((int x, int y) p)
+		{
+			return GetAdjacent8(p.x, p.y);
+		}
+
+		public IEnumerable<(int x, int y)> GetAdjacent8(int x, int y)
 		{
 			foreach (var a in GetAdjacent4(x, y))
 			{
@@ -278,11 +306,18 @@ namespace aoc
 			return count;
 		}
 
-		public bool IsInBounds((int X, int Y) p) => IsInBounds(p.X, p.Y);
+		public bool IsInBounds((int x, int y) p) => IsInBounds(p.x, p.y);
 
 		public bool IsInBounds(int x, int y)
 		{
 			return x >= 0 && y >= 0 && x < Width && y < Height;
+		}
+
+		public bool IsOnEdge((int x, int y) p) => IsOnEdge(p.x, p.y);
+
+		public bool IsOnEdge(int x, int y)
+		{
+			return x == 0 || y == 0 || x == Width - 1 || y == Height - 1;
 		}
 
 		public int Count(T t)
@@ -292,10 +327,10 @@ namespace aoc
 			return count;
 		}
 
-		public T this[(int X, int Y) p]
+		public T this[(int x, int y) p]
 		{
-			get => this[p.X, p.Y];
-			set => this[p.X, p.Y] = value;
+			get => this[p.x, p.y];
+			set => this[p.x, p.y] = value;
 		}
 
 		public T this[int x, int y]
@@ -307,6 +342,8 @@ namespace aoc
 		public int Width { get; }
 		public int Height { get; }
 		private readonly T[,] _data;
+
+		public DictionaryGrid<T> ToDictionaryGrid() => new(this);
 	}
 
 	public static partial class Input
